@@ -1,0 +1,683 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>AP Study Tracker 2026</title>
+<script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+<script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+<style>
+  :root {
+    --bg: #f7f7fb;
+    --surface: #ffffff;
+    --surface-2: #f2f2f7;
+    --text: #1a1a1f;
+    --text-dim: #6b6b75;
+    --border: #e5e5ec;
+    --green: #18a957;
+    --yellow: #e0a800;
+    --red: #e03e3e;
+    --accent: #5b5bd6;
+    --shadow: 0 1px 3px rgba(0,0,0,0.04), 0 4px 12px rgba(0,0,0,0.04);
+  }
+  [data-theme="dark"] {
+    --bg: #0f1014;
+    --surface: #1a1b22;
+    --surface-2: #23242c;
+    --text: #ececf1;
+    --text-dim: #9a9aa8;
+    --border: #2b2c36;
+    --shadow: 0 1px 3px rgba(0,0,0,0.3), 0 4px 12px rgba(0,0,0,0.2);
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Inter", "Segoe UI", Roboto, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    transition: background 0.2s, color 0.2s;
+  }
+  .app { max-width: 1200px; margin: 0 auto; padding: 24px 20px 60px; }
+  header.top {
+    display: flex; justify-content: space-between; align-items: center;
+    margin-bottom: 24px; flex-wrap: wrap; gap: 12px;
+  }
+  header.top h1 { margin: 0; font-size: 22px; font-weight: 700; letter-spacing: -0.02em; }
+  header.top .sub { color: var(--text-dim); font-size: 13px; margin-top: 2px; }
+  .toolbar { display: flex; gap: 8px; align-items: center; }
+  .icon-btn {
+    background: var(--surface); border: 1px solid var(--border); color: var(--text);
+    border-radius: 10px; padding: 8px 12px; cursor: pointer; font-size: 13px;
+    display: inline-flex; align-items: center; gap: 6px; transition: all 0.15s;
+  }
+  .icon-btn:hover { background: var(--surface-2); }
+
+  .countdown-grid {
+    display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 12px; margin-bottom: 28px;
+  }
+  .countdown-card {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 14px; padding: 16px; box-shadow: var(--shadow);
+    position: relative; overflow: hidden;
+  }
+  .countdown-card::before {
+    content: ""; position: absolute; top: 0; left: 0; right: 0; height: 4px;
+    background: var(--card-accent, var(--accent));
+  }
+  .countdown-card .cc-name { font-size: 13px; font-weight: 600; color: var(--text-dim); }
+  .countdown-card .cc-days { font-size: 36px; font-weight: 800; letter-spacing: -0.03em; margin: 6px 0 2px; }
+  .countdown-card .cc-label { font-size: 12px; color: var(--text-dim); }
+  .cc-dot { display:inline-block; width:8px; height:8px; border-radius:50%; margin-right:6px; vertical-align:middle; }
+  .cc-green { background: var(--green); }
+  .cc-yellow { background: var(--yellow); }
+  .cc-red { background: var(--red); }
+
+  .stats-row {
+    display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 12px; margin-bottom: 28px;
+  }
+  .stat-card {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 14px; padding: 16px;
+  }
+  .stat-card .label { font-size: 12px; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.05em; }
+  .stat-card .value { font-size: 28px; font-weight: 800; margin-top: 4px; letter-spacing: -0.02em; }
+  .stat-card .desc { font-size: 12px; color: var(--text-dim); margin-top: 2px; }
+
+  .weekly-log { display: flex; gap: 6px; margin-top: 10px; }
+  .day-col { flex: 1; text-align: center; }
+  .day-col .day-label { font-size: 10px; color: var(--text-dim); margin-bottom: 4px; }
+  .day-dot {
+    width: 100%; aspect-ratio: 1; border-radius: 6px;
+    background: var(--surface-2); display: flex; align-items: center; justify-content: center;
+    font-size: 10px; font-weight: 700; color: var(--text-dim);
+  }
+  .day-dot.active { background: var(--accent); color: #fff; }
+  .day-dot.today { outline: 2px solid var(--accent); outline-offset: 1px; }
+
+  section.classes { display: flex; flex-direction: column; gap: 14px; }
+  .class-card {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 14px; overflow: hidden; box-shadow: var(--shadow);
+  }
+  .class-header {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 16px; cursor: pointer; gap: 12px; flex-wrap: wrap;
+  }
+  .class-left { display: flex; align-items: center; gap: 12px; min-width: 0; flex: 1; }
+  .class-swatch { width: 12px; height: 36px; border-radius: 6px; flex-shrink: 0; }
+  .class-title { font-weight: 700; font-size: 16px; }
+  .class-meta { font-size: 12px; color: var(--text-dim); margin-top: 2px; }
+  .class-right { display: flex; align-items: center; gap: 10px; }
+  .progress-wrap { width: 140px; }
+  .progress-bar {
+    height: 8px; background: var(--surface-2); border-radius: 10px; overflow: hidden;
+  }
+  .progress-fill { height: 100%; transition: width 0.3s; }
+  .progress-text { font-size: 11px; color: var(--text-dim); text-align: right; margin-top: 2px; }
+  .chev { color: var(--text-dim); font-size: 14px; transition: transform 0.2s; }
+  .chev.open { transform: rotate(90deg); }
+
+  .class-body { padding: 0 16px 16px; border-top: 1px solid var(--border); }
+  .physics-select {
+    background: var(--surface-2); border: 1px solid var(--border); color: var(--text);
+    border-radius: 8px; padding: 6px 10px; font-size: 13px; margin: 12px 0;
+  }
+  .unit-list { display: flex; flex-direction: column; gap: 8px; margin-top: 12px; }
+  .unit-row {
+    background: var(--surface-2); border: 1px solid var(--border);
+    border-radius: 10px; padding: 12px;
+  }
+  .unit-top { display: flex; justify-content: space-between; align-items: center; gap: 10px; flex-wrap: wrap; }
+  .unit-name { font-weight: 600; font-size: 14px; flex: 1; min-width: 150px; }
+  .unit-checks { display: flex; gap: 14px; flex-wrap: wrap; }
+  .chk { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; color: var(--text-dim); cursor: pointer; user-select: none; }
+  .chk input { accent-color: var(--accent); width: 14px; height: 14px; cursor: pointer; }
+  .chk.mastered { color: var(--green); font-weight: 600; }
+  .unit-notes {
+    margin-top: 8px; width: 100%; background: var(--surface); color: var(--text);
+    border: 1px solid var(--border); border-radius: 8px; padding: 8px 10px;
+    font-family: inherit; font-size: 13px; resize: vertical; min-height: 34px;
+  }
+
+  .class-footer {
+    display: flex; justify-content: space-between; align-items: center; margin-top: 14px;
+    flex-wrap: wrap; gap: 10px;
+  }
+  .study-btn {
+    background: var(--card-accent, var(--accent)); color: #fff; border: none;
+    border-radius: 10px; padding: 10px 16px; font-weight: 600; font-size: 13px;
+    cursor: pointer; display: inline-flex; align-items: center; gap: 6px;
+  }
+  .study-btn:hover { filter: brightness(1.08); }
+
+  .pomodoro-bar {
+    position: fixed; bottom: 16px; left: 50%; transform: translateX(-50%);
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 14px; padding: 12px 18px; box-shadow: 0 10px 30px rgba(0,0,0,0.15);
+    display: flex; align-items: center; gap: 14px; z-index: 50;
+  }
+  .pomo-time { font-size: 24px; font-weight: 800; letter-spacing: -0.02em; font-variant-numeric: tabular-nums; }
+  .pomo-label { font-size: 12px; color: var(--text-dim); }
+  .pomo-btn {
+    background: var(--surface-2); border: 1px solid var(--border); color: var(--text);
+    border-radius: 8px; padding: 6px 10px; font-size: 12px; cursor: pointer;
+  }
+
+  @media (max-width: 600px) {
+    .progress-wrap { width: 100px; }
+    .countdown-card .cc-days { font-size: 28px; }
+  }
+</style>
+</head>
+<body>
+<div id="root"></div>
+
+<script type="text/babel">
+const { useState, useEffect, useRef, useMemo } = React;
+
+// ---- Data ----
+const EXAM_DATES = {
+  chem:    { name: "AP Chemistry",    date: "2026-05-05", accent: "#22a06b" },
+  apush:   { name: "AP US History",   date: "2026-05-08", accent: "#c94a4a" },
+  calcab:  { name: "AP Calculus AB",  date: "2026-05-11", accent: "#3b82f6" },
+  lang:    { name: "AP Lang & Comp",  date: "2026-05-13", accent: "#a855f7" },
+  physics: { name: "AP Physics",      date: "2026-05-06", accent: "#f59e0b" },
+};
+
+const PHYSICS_DATES = {
+  "1": "2026-05-06",
+  "2": "2026-05-07",
+  "C-Mech": "2026-05-13",
+  "C-E&M": "2026-05-14",
+};
+
+const UNITS = {
+  chem: [
+    "Atomic Structure & Properties",
+    "Molecular & Ionic Compound Structure",
+    "Intermolecular Forces & Properties",
+    "Chemical Reactions",
+    "Kinetics",
+    "Thermodynamics",
+    "Equilibrium",
+    "Acids & Bases",
+    "Applications of Thermodynamics",
+  ],
+  apush: [
+    "Period 1 (1491–1607)",
+    "Period 2 (1607–1754)",
+    "Period 3 (1754–1800)",
+    "Period 4 (1800–1848)",
+    "Period 5 (1844–1877)",
+    "Period 6 (1865–1898)",
+    "Period 7 (1890–1945)",
+    "Period 8 (1945–1980)",
+    "Period 9 (1980–Present)",
+  ],
+  calcab: [
+    "Limits & Continuity",
+    "Differentiation: Definition & Fundamental Properties",
+    "Differentiation: Composite, Implicit & Inverse Functions",
+    "Contextual Applications of Differentiation",
+    "Analytical Applications of Differentiation",
+    "Integration & Accumulation of Change",
+    "Differential Equations",
+    "Applications of Integration",
+  ],
+  lang: [
+    "Unit 1 – Rhetorical Situation: Reading",
+    "Unit 2 – Rhetorical Situation: Writing",
+    "Unit 3 – Claims & Evidence: Reading",
+    "Unit 4 – Claims & Evidence: Writing",
+    "Unit 5 – Reasoning & Organization: Reading",
+    "Unit 6 – Reasoning & Organization: Writing",
+    "Unit 7 – Style: Reading",
+    "Unit 8 – Style: Writing",
+    "Unit 9 – Essay Mastery (Synthesis, Rhetorical Analysis, Argument)",
+  ],
+  physics: [
+    "Kinematics",
+    "Force & Translational Dynamics",
+    "Work, Energy & Power",
+    "Linear Momentum",
+    "Torque & Rotational Dynamics",
+    "Energy & Momentum of Rotating Systems",
+    "Oscillations",
+    "Fluids",
+  ],
+};
+
+// ---- Storage (per-user namespaced) ----
+const USERS_KEY = "ap-study-tracker-users";
+const SESSION_KEY = "ap-study-tracker-session";
+const dataKey = (u) => `ap-study-tracker-v1::${u}`;
+const load = (user) => {
+  try { return JSON.parse(localStorage.getItem(dataKey(user)) || "{}"); }
+  catch { return {}; }
+};
+const save = (user, data) => {
+  try { localStorage.setItem(dataKey(user), JSON.stringify(data)); } catch {}
+};
+// Simple non-cryptographic hash — client-side only, not real security
+const hashPw = async (pw) => {
+  const buf = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(pw));
+  return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2,"0")).join("");
+};
+const loadUsers = () => { try { return JSON.parse(localStorage.getItem(USERS_KEY) || "{}"); } catch { return {}; } };
+const saveUsers = (u) => { try { localStorage.setItem(USERS_KEY, JSON.stringify(u)); } catch {} };
+
+// ---- Utilities ----
+const todayISO = () => {
+  const d = new Date();
+  return d.getFullYear() + "-" + String(d.getMonth()+1).padStart(2,"0") + "-" + String(d.getDate()).padStart(2,"0");
+};
+const daysUntil = (iso) => {
+  const now = new Date(); now.setHours(0,0,0,0);
+  const target = new Date(iso + "T00:00:00");
+  return Math.ceil((target - now) / (1000*60*60*24));
+};
+const daysDiff = (a, b) => {
+  const d1 = new Date(a + "T00:00:00"), d2 = new Date(b + "T00:00:00");
+  return Math.round((d2 - d1) / (1000*60*60*24));
+};
+const colorFor = (days) => days < 15 ? "red" : days <= 30 ? "yellow" : "green";
+const fmtDate = (iso) => new Date(iso + "T00:00:00").toLocaleDateString(undefined, { month: "short", day: "numeric" });
+
+// ---- Login Screen ----
+function LoginScreen({ onLogin }) {
+  const [mode, setMode] = useState("login");
+  const [username, setUsername] = useState("");
+  const [password, setPassword] = useState("");
+  const [error, setError] = useState("");
+
+  const submit = async (e) => {
+    e.preventDefault();
+    setError("");
+    const u = username.trim().toLowerCase();
+    if (!u || !password) { setError("Enter a username and password."); return; }
+    const users = loadUsers();
+    const hash = await hashPw(password);
+    if (mode === "signup") {
+      if (users[u]) { setError("Username already exists."); return; }
+      users[u] = { hash, created: Date.now() };
+      saveUsers(users);
+    } else {
+      if (!users[u] || users[u].hash !== hash) { setError("Invalid username or password."); return; }
+    }
+    localStorage.setItem(SESSION_KEY, u);
+    onLogin(u);
+  };
+
+  return (
+    <div style={{ minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", padding: 20 }}>
+      <form onSubmit={submit} style={{ background: "var(--surface)", border: "1px solid var(--border)", borderRadius: 16, padding: 28, width: "100%", maxWidth: 360, boxShadow: "var(--shadow)" }}>
+        <h1 style={{ margin: "0 0 4px", fontSize: 22, letterSpacing: "-0.02em" }}>AP Study Tracker</h1>
+        <div style={{ color: "var(--text-dim)", fontSize: 13, marginBottom: 20 }}>
+          {mode === "login" ? "Sign in to continue" : "Create an account"}
+        </div>
+        <label style={{ fontSize: 12, color: "var(--text-dim)" }}>Username</label>
+        <input value={username} onChange={e => setUsername(e.target.value)} autoFocus
+          style={{ width: "100%", padding: "10px 12px", borderRadius: 10, border: "1px solid var(--border)", background: "var(--surface-2)", color: "var(--text)", fontSize: 14, marginTop: 4, marginBottom: 12 }} />
+        <label style={{ fontSize: 12, color: "var(--text-dim)" }}>Password</label>
+        <input type="password" value={password} onChange={e => setPassword(e.target.value)}
+          style={{ width: "100%", padding: "10px 12px", borderRadius: 10, border: "1px solid var(--border)", background: "var(--surface-2)", color: "var(--text)", fontSize: 14, marginTop: 4, marginBottom: 12 }} />
+        {error && <div style={{ color: "var(--red)", fontSize: 12, marginBottom: 10 }}>{error}</div>}
+        <button type="submit" style={{ width: "100%", padding: "11px", borderRadius: 10, border: "none", background: "var(--accent)", color: "#fff", fontWeight: 600, fontSize: 14, cursor: "pointer" }}>
+          {mode === "login" ? "Log in" : "Create account"}
+        </button>
+        <div style={{ textAlign: "center", marginTop: 14, fontSize: 13, color: "var(--text-dim)" }}>
+          {mode === "login" ? "New here?" : "Already have an account?"}{" "}
+          <a href="#" onClick={e => { e.preventDefault(); setMode(mode === "login" ? "signup" : "login"); setError(""); }} style={{ color: "var(--accent)" }}>
+            {mode === "login" ? "Sign up" : "Log in"}
+          </a>
+        </div>
+        <div style={{ fontSize: 11, color: "var(--text-dim)", marginTop: 16, textAlign: "center" }}>
+          Data is stored locally in your browser.
+        </div>
+      </form>
+    </div>
+  );
+}
+
+// ---- Root ----
+function App() {
+  const [user, setUser] = useState(() => localStorage.getItem(SESSION_KEY) || null);
+
+  useEffect(() => {
+    const saved = localStorage.getItem("ap-study-tracker-theme") || "light";
+    document.documentElement.setAttribute("data-theme", saved);
+  }, []);
+
+  if (!user) return <LoginScreen onLogin={setUser} />;
+  return <Tracker user={user} onLogout={() => { localStorage.removeItem(SESSION_KEY); setUser(null); }} />;
+}
+
+function Tracker({ user, onLogout }) {
+  const [state, setState] = useState(() => {
+    const s = load(user);
+    return {
+      units: s.units || {},          // { classId: { unitIdx: { reviewed, practiced, mastered, notes } } }
+      physicsVariant: s.physicsVariant || "1",
+      streak: s.streak || 0,
+      lastStudyDate: s.lastStudyDate || null,
+      studyLog: s.studyLog || {},    // { "YYYY-MM-DD": [classId, ...] }
+      theme: s.theme || "light",
+      openClasses: s.openClasses || { chem: true },
+    };
+  });
+
+  useEffect(() => { save(user, state); }, [state, user]);
+  useEffect(() => {
+    document.documentElement.setAttribute("data-theme", state.theme);
+    localStorage.setItem("ap-study-tracker-theme", state.theme);
+  }, [state.theme]);
+
+  const toggleTheme = () => setState(s => ({ ...s, theme: s.theme === "dark" ? "light" : "dark" }));
+
+  const markStudied = (classId) => {
+    const today = todayISO();
+    setState(s => {
+      const log = { ...s.studyLog };
+      const existing = log[today] || [];
+      if (!existing.includes(classId)) log[today] = [...existing, classId];
+      let { streak, lastStudyDate } = s;
+      if (lastStudyDate !== today) {
+        if (lastStudyDate && daysDiff(lastStudyDate, today) === 1) streak = streak + 1;
+        else streak = 1;
+        lastStudyDate = today;
+      }
+      return { ...s, studyLog: log, streak, lastStudyDate };
+    });
+  };
+
+  const setUnitField = (classId, unitIdx, field, value) => {
+    setState(s => {
+      const classUnits = { ...(s.units[classId] || {}) };
+      const u = { reviewed: false, practiced: false, mastered: false, notes: "", ...(classUnits[unitIdx] || {}) };
+      u[field] = value;
+      classUnits[unitIdx] = u;
+      markStudiedInner(); // side-effect handled via separate call below
+      return { ...s, units: { ...s.units, [classId]: classUnits } };
+    });
+    if (field !== "notes" && value) markStudied(classId);
+  };
+  const markStudiedInner = () => {}; // no-op placeholder for readability
+
+  const toggleOpen = (classId) => {
+    setState(s => ({ ...s, openClasses: { ...s.openClasses, [classId]: !s.openClasses[classId] } }));
+  };
+
+  const setPhysicsVariant = (v) => setState(s => ({ ...s, physicsVariant: v }));
+
+  // Count mastered units across all classes
+  const totals = useMemo(() => {
+    let mastered = 0, total = 0;
+    Object.keys(UNITS).forEach(cid => {
+      UNITS[cid].forEach((_, idx) => {
+        total++;
+        if (state.units[cid]?.[idx]?.mastered) mastered++;
+      });
+    });
+    return { mastered, total };
+  }, [state.units]);
+
+  return (
+    <div className="app">
+      <header className="top">
+        <div>
+          <h1>AP Study Tracker <span style={{ color: "var(--text-dim)", fontWeight: 500 }}>· 2026</span></h1>
+          <div className="sub">Stay consistent. One unit at a time.</div>
+        </div>
+        <div className="toolbar">
+          <span style={{ fontSize: 13, color: "var(--text-dim)" }}>Hi, <strong style={{ color: "var(--text)" }}>{user}</strong></span>
+          <button className="icon-btn" onClick={toggleTheme}>
+            {state.theme === "dark" ? "☀ Light" : "🌙 Dark"}
+          </button>
+          <button className="icon-btn" onClick={() => {
+            const blob = new Blob([JSON.stringify(state, null, 2)], { type: "application/json" });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement("a");
+            a.href = url; a.download = `ap-tracker-${user}-${todayISO()}.json`;
+            a.click(); URL.revokeObjectURL(url);
+          }}>⬇ Export</button>
+          <button className="icon-btn" onClick={() => document.getElementById("import-file").click()}>⬆ Import</button>
+          <input id="import-file" type="file" accept="application/json" style={{ display: "none" }}
+            onChange={(e) => {
+              const f = e.target.files?.[0]; if (!f) return;
+              const reader = new FileReader();
+              reader.onload = () => {
+                try {
+                  const data = JSON.parse(reader.result);
+                  if (!data || typeof data !== "object") throw new Error("bad");
+                  if (confirm("Replace current progress with imported data?")) setState(data);
+                } catch { alert("Invalid file."); }
+                e.target.value = "";
+              };
+              reader.readAsText(f);
+            }} />
+          <button className="icon-btn" onClick={onLogout}>Log out</button>
+        </div>
+      </header>
+
+      <CountdownGrid physicsVariant={state.physicsVariant} />
+
+      <StatsRow streak={state.streak} totals={totals} studyLog={state.studyLog} />
+
+      <section className="classes">
+        {Object.keys(EXAM_DATES).map(cid => (
+          <ClassCard
+            key={cid}
+            classId={cid}
+            open={!!state.openClasses[cid]}
+            onToggle={() => toggleOpen(cid)}
+            unitState={state.units[cid] || {}}
+            onUnitChange={(idx, field, val) => setUnitField(cid, idx, field, val)}
+            physicsVariant={state.physicsVariant}
+            onPhysicsVariant={setPhysicsVariant}
+            onStudy={() => markStudied(cid)}
+          />
+        ))}
+      </section>
+
+      <Pomodoro />
+    </div>
+  );
+}
+
+function CountdownGrid({ physicsVariant }) {
+  const [, setTick] = useState(0);
+  useEffect(() => {
+    const id = setInterval(() => setTick(t => t+1), 1000 * 60 * 30);
+    return () => clearInterval(id);
+  }, []);
+  return (
+    <div className="countdown-grid">
+      {Object.entries(EXAM_DATES).map(([cid, info]) => {
+        const date = cid === "physics" ? PHYSICS_DATES[physicsVariant] : info.date;
+        const d = daysUntil(date);
+        const c = colorFor(d);
+        return (
+          <div key={cid} className="countdown-card" style={{ "--card-accent": info.accent }}>
+            <div className="cc-name">{info.name}{cid === "physics" ? ` ${physicsVariant}` : ""}</div>
+            <div className="cc-days">{d >= 0 ? d : 0}</div>
+            <div className="cc-label">
+              <span className={`cc-dot cc-${c}`}></span>
+              days left · {fmtDate(date)}
+            </div>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+function StatsRow({ streak, totals, studyLog }) {
+  const pct = totals.total ? Math.round(100 * totals.mastered / totals.total) : 0;
+  const today = new Date();
+  const weekDays = [];
+  for (let i = 6; i >= 0; i--) {
+    const d = new Date(today); d.setDate(today.getDate() - i);
+    const iso = d.getFullYear() + "-" + String(d.getMonth()+1).padStart(2,"0") + "-" + String(d.getDate()).padStart(2,"0");
+    weekDays.push({ iso, label: d.toLocaleDateString(undefined,{weekday:"narrow"}), isToday: i === 0 });
+  }
+  return (
+    <div className="stats-row">
+      <div className="stat-card">
+        <div className="label">Daily Streak</div>
+        <div className="value">🔥 {streak}</div>
+        <div className="desc">{streak === 0 ? "Start today" : streak === 1 ? "day in a row" : "days in a row"}</div>
+      </div>
+      <div className="stat-card">
+        <div className="label">Overall Mastery</div>
+        <div className="value">{pct}%</div>
+        <div className="desc">{totals.mastered} / {totals.total} units mastered</div>
+      </div>
+      <div className="stat-card" style={{ gridColumn: "span 2", minWidth: 260 }}>
+        <div className="label">This Week</div>
+        <div className="weekly-log">
+          {weekDays.map(d => {
+            const classes = studyLog[d.iso] || [];
+            const count = classes.length;
+            return (
+              <div key={d.iso} className="day-col">
+                <div className="day-label">{d.label}</div>
+                <div className={`day-dot ${count > 0 ? "active" : ""} ${d.isToday ? "today" : ""}`} title={classes.join(", ")}>
+                  {count > 0 ? count : ""}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function ClassCard({ classId, open, onToggle, unitState, onUnitChange, physicsVariant, onPhysicsVariant, onStudy }) {
+  const info = EXAM_DATES[classId];
+  const units = UNITS[classId];
+  const masteredCount = units.filter((_, i) => unitState[i]?.mastered).length;
+  const pct = Math.round(100 * masteredCount / units.length);
+  const examDate = classId === "physics" ? PHYSICS_DATES[physicsVariant] : info.date;
+  const d = daysUntil(examDate);
+  return (
+    <div className="class-card" style={{ "--card-accent": info.accent }}>
+      <div className="class-header" onClick={onToggle}>
+        <div className="class-left">
+          <div className="class-swatch" style={{ background: info.accent }}></div>
+          <div style={{ minWidth: 0 }}>
+            <div className="class-title">{info.name}{classId === "physics" ? ` ${physicsVariant}` : ""}</div>
+            <div className="class-meta">{masteredCount}/{units.length} mastered · {d} days to exam</div>
+          </div>
+        </div>
+        <div className="class-right">
+          <div className="progress-wrap">
+            <div className="progress-bar"><div className="progress-fill" style={{ width: pct + "%", background: info.accent }}></div></div>
+            <div className="progress-text">{pct}%</div>
+          </div>
+          <span className={`chev ${open ? "open" : ""}`}>▶</span>
+        </div>
+      </div>
+      {open && (
+        <div className="class-body">
+          {classId === "physics" && (
+            <select className="physics-select" value={physicsVariant} onClick={e => e.stopPropagation()} onChange={e => onPhysicsVariant(e.target.value)}>
+              <option value="1">Physics 1 (Algebra-based)</option>
+              <option value="2">Physics 2 (Algebra-based)</option>
+              <option value="C-Mech">Physics C: Mechanics</option>
+              <option value="C-E&M">Physics C: E&amp;M</option>
+            </select>
+          )}
+          <div className="unit-list">
+            {units.map((u, idx) => {
+              const st = unitState[idx] || {};
+              return (
+                <div key={idx} className="unit-row">
+                  <div className="unit-top">
+                    <div className="unit-name">{idx+1}. {u}</div>
+                    <div className="unit-checks">
+                      <label className="chk"><input type="checkbox" checked={!!st.reviewed} onChange={e => onUnitChange(idx, "reviewed", e.target.checked)} />Reviewed</label>
+                      <label className="chk"><input type="checkbox" checked={!!st.practiced} onChange={e => onUnitChange(idx, "practiced", e.target.checked)} />Practiced</label>
+                      <label className={`chk ${st.mastered ? "mastered" : ""}`}><input type="checkbox" checked={!!st.mastered} onChange={e => onUnitChange(idx, "mastered", e.target.checked)} />Mastered</label>
+                    </div>
+                  </div>
+                  <textarea
+                    className="unit-notes"
+                    placeholder="Quick notes, weak spots, questions to revisit…"
+                    value={st.notes || ""}
+                    onChange={e => onUnitChange(idx, "notes", e.target.value)}
+                  />
+                </div>
+              );
+            })}
+          </div>
+          <div className="class-footer">
+            <div style={{ color: "var(--text-dim)", fontSize: 12 }}>Exam: {fmtDate(examDate)}</div>
+            <button className="study-btn" onClick={() => { onStudy(); window.dispatchEvent(new CustomEvent("start-pomodoro", { detail: { classId, name: info.name }})); }}>
+              ▶ Study now (25 min)
+            </button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function Pomodoro() {
+  const [active, setActive] = useState(false);
+  const [remaining, setRemaining] = useState(25 * 60);
+  const [label, setLabel] = useState("");
+  const intervalRef = useRef(null);
+
+  useEffect(() => {
+    const handler = (e) => {
+      setLabel(e.detail?.name || "Focus session");
+      setRemaining(25 * 60);
+      setActive(true);
+    };
+    window.addEventListener("start-pomodoro", handler);
+    return () => window.removeEventListener("start-pomodoro", handler);
+  }, []);
+
+  useEffect(() => {
+    if (!active) { clearInterval(intervalRef.current); return; }
+    intervalRef.current = setInterval(() => {
+      setRemaining(r => {
+        if (r <= 1) {
+          clearInterval(intervalRef.current);
+          setActive(false);
+          try { new Audio("data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEARKwAAIhYAQACABAAZGF0YQAAAAA=").play(); } catch {}
+          alert("Pomodoro complete! Take a 5-minute break.");
+          return 0;
+        }
+        return r - 1;
+      });
+    }, 1000);
+    return () => clearInterval(intervalRef.current);
+  }, [active]);
+
+  if (!active && remaining === 25 * 60) return null;
+
+  const mm = String(Math.floor(remaining / 60)).padStart(2, "0");
+  const ss = String(remaining % 60).padStart(2, "0");
+  return (
+    <div className="pomodoro-bar">
+      <div>
+        <div className="pomo-label">{label || "Focus"}</div>
+        <div className="pomo-time">{mm}:{ss}</div>
+      </div>
+      <button className="pomo-btn" onClick={() => setActive(a => !a)}>{active ? "Pause" : "Resume"}</button>
+      <button className="pomo-btn" onClick={() => { setActive(false); setRemaining(25*60); }}>Reset</button>
+      <button className="pomo-btn" onClick={() => { setActive(false); setRemaining(25*60); setLabel(""); }}>✕</button>
+    </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById("root")).render(<App />);
+</script>
+</body>
+</html>
